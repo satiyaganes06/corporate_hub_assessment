@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\LogHelper;
-use App\Http\Requests\CompanyCreateRequest;
+use App\Http\Requests\CompanyRequest;
 use App\Http\Requests\CompanyUpdateRequest;
 use App\Models\Company;
 use Illuminate\Database\QueryException;
@@ -37,16 +37,15 @@ class CompanyController extends Controller
     /**
      * Store a newly created company in storage.
      * @author satiyaG <satiyaganes.sg@gmail.com>
-     * @param CompanyCreateRequest $request
+     * @param CompanyRequest $request
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function store(CompanyCreateRequest $request)
+    public function store(CompanyRequest $request)
     {
-        dd($request);
         try {
-            $data = $request->all();
+            $data = $request->validated(); // Use validated data
+            
             if ($request->hasFile('logo')) {
-                
                 $path = $request->file('logo')->store('company-logos', 'public');
                 $data['logo'] = $path;
             }
@@ -60,17 +59,9 @@ class CompanyController extends Controller
 
             LogHelper::errorLog('Company Creation Failed', [['requested_by' => Auth::user()->email]]);
             return redirect()->back()->with('error', 'Failed to create company')->withInput();
-        } catch  (QueryException $e) {
-            // Check if it's a duplicate entry error (code 23000)
-            if ($e->errorInfo[1] == 1062) {                
-                return redirect()->back()->withErrors(['email' => 'This email address already set by other company', 'website_link' => 'This website link already exists in our database'])->withInput();
-
-            }else{
-                  // Handle other database errors
-                  return redirect()->back()->withErrors(['error' => 'An error occurred: ' . $e->getMessage()])->withInput();
-            }
-            
-          
+        } catch (\Exception $e) {
+            LogHelper::errorLog('Company Creation Exception', [['requested_by' => Auth::user()->email, 'error' => $e->getMessage()]]);
+            return redirect()->back()->with('error', 'An error occurred: ' . $e->getMessage())->withInput();
         }
     }
 
@@ -86,22 +77,20 @@ class CompanyController extends Controller
         return view('company.admin.add_edit_company', compact('company'));
     }
 
-    /**
+    /** 
      * Update the specified company in storage.
      * @author satiyaG <satiyaganes.sg@gmail.com>
-     * @param CompanyUpdateRequest $request
-     * @param string $id
+     * @param CompanyRequest $request
+     * @param \App\Models\Company $company
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function update(CompanyUpdateRequest $request, string $id)
+    public function update(CompanyRequest $request, Company $company)
     {
         try {
+            $data = $request->validated(); // Use validated data
             
-            $company = Company::findOrFail($id);
-            $data = $request->all();
-
             if ($request->hasFile('logo')) {
-                // Delete old logo if exists
+                // Delete old logo if it exists
                 if ($company->logo && Storage::disk('public')->exists($company->logo)) {
                     Storage::disk('public')->delete($company->logo);
                 }
@@ -110,27 +99,16 @@ class CompanyController extends Controller
                 $data['logo'] = $path;
             }
 
-            $updated = $company->update($data);
-            
-            if ($updated) {
-                LogHelper::successLog('Company Updated', [['requested_by' => Auth::user()->email], 'company_id' => $id]);
+            if ($company->update($data)) {
+                LogHelper::successLog('Company Updated', [['requested_by' => Auth::user()->email], 'company_id' => $company->id]);
                 return redirect()->route('companies.index')->with('success', 'Company updated successfully');
             }
 
-            LogHelper::errorLog('Company Update Failed', [['requested_by' => Auth::user()->email], 'company_id' => $id]);
+            LogHelper::errorLog('Company Update Failed', [['requested_by' => Auth::user()->email], 'company_id' => $company->id]);
             return redirect()->back()->with('error', 'Failed to update company')->withInput();
-
-        }  catch  (QueryException $e) {
-            // Check if it's a duplicate entry error (code 23000)
-            if ($e->errorInfo[1] == 1062) {                
-                return redirect()->back()->withErrors(['email' => 'This email address already set by other company', 'website_link' => 'This website link already exists in our database'])->withInput();
-
-            }else{
-                  // Handle other database errors
-                  return redirect()->back()->withErrors(['error' => 'An error occurred: ' . $e->getMessage()])->withInput();
-            }
-            
-          
+        } catch (\Exception $e) {
+            LogHelper::errorLog('Company Update Exception', [['requested_by' => Auth::user()->email, 'company_id' => $company->id, 'error' => $e->getMessage()]]);
+            return redirect()->back()->with('error', 'An error occurred: ' . $e->getMessage())->withInput();
         }
     }
 
