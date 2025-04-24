@@ -14,7 +14,7 @@
                     </svg>
                     <span>Delivering Excellence</span>
                 </span>
-                <span class="text-[#FF6B5D]">Made with ❤️ by Corporate Hub Team</span>
+                <span class="text-[#FF6B5D]">Made with ❤️ by Satiyganes (sG)</span>
             </div>
         </div>
     </div>

@@ -2,9 +2,9 @@
 
 @section('content')
     <x-breadcrumb :items="[
-        ['name' => 'Companies', 'url' => route('companies.index')],
-        ['name' => isset($company) ? 'Edit Company' : 'Create Company']
-    ]" />
+            ['name' => 'Companies', 'url' => route('companies.index')],
+            ['name' => isset($company) ? 'Edit Company' : 'Create Company']
+        ]" />
 
     <form action="{{ isset($company) ? route('companies.update', $company->id) : route('companies.store') }}" method="POST"
         enctype="multipart/form-data">
@@ -76,10 +76,10 @@
                 <!-- Website Field -->
                 <div class="mb-4">
                     <label for="website" class="block text-sm font-medium text-gray-600 mb-2">Website</label>
-                    <input type="url" name="website_link" id="website"
+                    <input type="url" name="website_link" id="website_link"
                         class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
-                        value="{{ old('website', $company->website_link ?? '') }}">
-                    @error('website')
+                        value="{{ old('website_link', $company->website_link ?? '') }}">
+                    @error('website_link')
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                     @enderror
                 </div>
